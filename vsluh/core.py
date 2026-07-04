@@ -81,10 +81,13 @@ class Core:
         return normalize.split_chunks(speakable, FIRST_CHUNK_MAX, CHUNK_MAX)
 
     def speak(self, raw, voice=None, rate=None, force=False):
+        from .log import log
         if not force and not self.cfg.get("enabled", True):
+            log("speak: озвучка выключена (enabled=false)")
             return
         if not raw or not raw.strip():
             return
+        log(f"speak: старт, {len(raw)} символов, ready={self.ready.is_set()}")
         voice = voice or self.cfg.get("voice")
         rate = rate if rate is not None else self.cfg.get("rate")
 

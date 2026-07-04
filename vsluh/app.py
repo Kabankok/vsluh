@@ -33,9 +33,13 @@ def main():
     write_runtime(base_dir, PORT, token)
 
     def on_speak():
+        from .log import log
+        log("on_speak: hotkey fired")
         text = capture_selection()
         if text:
             core.speak(text)
+        else:
+            log("on_speak: пустой захват — нечего озвучивать")
 
     listener = HotkeyListener(
         {"speak": core.cfg["hotkey_speak"], "stop": core.cfg["hotkey_stop"]},

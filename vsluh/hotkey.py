@@ -44,6 +44,8 @@ kernel32.GlobalLock.restype = _c_void_p
 kernel32.GlobalUnlock.argtypes = [_c_void_p]
 kernel32.GlobalUnlock.restype = wintypes.BOOL
 kernel32.GetCurrentThreadId.restype = wintypes.DWORD
+kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
+kernel32.GetModuleHandleW.restype = _c_void_p
 
 # --- модификаторы RegisterHotKey ---
 MOD_ALT = 0x0001
@@ -90,29 +92,51 @@ VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN = 0x11, 0x12, 0x10, 0x5B, 0x5C
 VK_C = 0x43
 
 
+# ВАЖНО: INPUT.union должен вмещать самый большой член (MOUSEINPUT), иначе
+# sizeof(INPUT) меньше реального (40 байт на x64) и SendInput молча ничего не
+# делает — все синтетические нажатия и Ctrl+C для захвата не работают.
+_ULONG_PTR = ctypes.c_size_t
+
+
 class KEYBDINPUT(ctypes.Structure):
     _fields_ = [("wVk", wintypes.WORD), ("wScan", wintypes.WORD),
                 ("dwFlags", wintypes.DWORD), ("time", wintypes.DWORD),
-                ("dwExtraInfo", ctypes.POINTER(wintypes.ULONG))]
+                ("dwExtraInfo", _ULONG_PTR)]
+
+
+class MOUSEINPUT(ctypes.Structure):
+    _fields_ = [("dx", wintypes.LONG), ("dy", wintypes.LONG),
+                ("mouseData", wintypes.DWORD), ("dwFlags", wintypes.DWORD),
+                ("time", wintypes.DWORD), ("dwExtraInfo", _ULONG_PTR)]
+
+
+class HARDWAREINPUT(ctypes.Structure):
+    _fields_ = [("uMsg", wintypes.DWORD), ("wParamL", wintypes.WORD),
+                ("wParamH", wintypes.WORD)]
 
 
 class _INPUTunion(ctypes.Union):
-    _fields_ = [("ki", KEYBDINPUT)]
+    _fields_ = [("mi", MOUSEINPUT), ("ki", KEYBDINPUT), ("hi", HARDWAREINPUT)]
 
 
 class INPUT(ctypes.Structure):
     _fields_ = [("type", wintypes.DWORD), ("u", _INPUTunion)]
 
 
+user32.SendInput.argtypes = [wintypes.UINT, ctypes.POINTER(INPUT), ctypes.c_int]
+user32.SendInput.restype = wintypes.UINT
+
+
 def _key(vk, up=False):
-    ki = KEYBDINPUT(vk, 0, KEYEVENTF_KEYUP if up else 0, 0, None)
+    ki = KEYBDINPUT(vk, 0, KEYEVENTF_KEYUP if up else 0, 0, 0)
     return INPUT(INPUT_KEYBOARD, _INPUTunion(ki=ki))
 
 
 def _send(inputs):
     n = len(inputs)
     arr = (INPUT * n)(*inputs)
-    user32.SendInput(n, arr, ctypes.sizeof(INPUT))
+    sent = user32.SendInput(n, arr, ctypes.sizeof(INPUT))
+    return sent
 
 
 def _release_modifiers():
@@ -209,50 +233,131 @@ def capture_selection(timeout=0.5):
         time.sleep(0.02)
 
     _set_clipboard_text(saved)  # вернуть как было
+    try:
+        from .log import log
+        log(f"capture_selection -> {len(text)} chars: {text[:40]!r}")
+    except Exception:
+        pass
     return text
 
 
+# --- низкоуровневый хук клавиатуры (WH_KEYBOARD_LL) ---
+# RegisterHotKey не реагирует на синтетический ввод и капризен к раскладкам
+# (Ctrl+Alt = AltGr). Низкоуровневый хук видит реальные нажатия при любой
+# раскладке и синтетический ввод — поэтому его можно самотестировать.
+WH_KEYBOARD_LL = 13
+WM_KEYDOWN = 0x0100
+WM_KEYUP = 0x0101
+WM_SYSKEYDOWN = 0x0104
+WM_SYSKEYUP = 0x0105
+
+ULONG_PTR = ctypes.c_size_t
+LRESULT = ctypes.c_ssize_t
+
+
+class KBDLLHOOKSTRUCT(ctypes.Structure):
+    _fields_ = [("vkCode", wintypes.DWORD), ("scanCode", wintypes.DWORD),
+                ("flags", wintypes.DWORD), ("time", wintypes.DWORD),
+                ("dwExtraInfo", ULONG_PTR)]
+
+
+HOOKPROC = ctypes.WINFUNCTYPE(LRESULT, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM)
+
+user32.SetWindowsHookExW.argtypes = [ctypes.c_int, HOOKPROC, _c_void_p, wintypes.DWORD]
+user32.SetWindowsHookExW.restype = _c_void_p
+user32.CallNextHookEx.argtypes = [_c_void_p, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM]
+user32.CallNextHookEx.restype = LRESULT
+user32.UnhookWindowsHookEx.argtypes = [_c_void_p]
+user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
+user32.GetAsyncKeyState.restype = wintypes.SHORT
+
+
+def _mod_down(mask):
+    """Нажат ли требуемый набор модификаторов (Ctrl/Alt/Shift/Win)."""
+    def down(vk):
+        return bool(user32.GetAsyncKeyState(vk) & 0x8000)
+    if (mask & MOD_CONTROL) and not down(VK_CONTROL):
+        return False
+    if (mask & MOD_ALT) and not down(VK_MENU):
+        return False
+    if (mask & MOD_SHIFT) and not down(VK_SHIFT):
+        return False
+    if (mask & MOD_WIN) and not (down(VK_LWIN) or down(VK_RWIN)):
+        return False
+    return True
+
+
 class HotkeyListener:
-    """Регистрирует хоткеи и в своём потоке крутит цикл сообщений.
-    callbacks: {"speak": fn, "stop": fn}. Возвращает список неудачных биндингов."""
+    """Слушает горячие клавиши низкоуровневым хуком.
+    bindings: {"speak": "ctrl+alt+z", "stop": "ctrl+alt+x"}
+    callbacks: {"speak": fn, "stop": fn}."""
 
     def __init__(self, bindings, callbacks):
-        # bindings: {"speak": "ctrl+alt+z", "stop": "ctrl+alt+x"}
         self.bindings = bindings
         self.callbacks = callbacks
         self._thread = None
         self._thread_id = None
         self.failed = []
+        self._hook = None
+        self._proc = None       # держим ссылку, иначе GC убьёт callback
+        self._combos = []       # [(name, mask_без_norepeat, vk)]
+        self._pressed = set()   # анти-автоповтор: vk уже нажата
 
     def start(self):
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
-
-    def _run(self):
-        self._thread_id = kernel32.GetCurrentThreadId()
-        ids = {}
-        hid = 1
         for name, combo in self.bindings.items():
             parsed = parse_hotkey(combo)
             if not parsed:
                 self.failed.append(name)
                 continue
             mods, vk = parsed
-            if user32.RegisterHotKey(None, hid, mods, vk):
-                ids[hid] = name
-            else:
-                self.failed.append(name)  # клавиша занята другим приложением
-            hid += 1
+            self._combos.append((name, mods & ~MOD_NOREPEAT, vk))
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
 
+    def _on_key(self, ncode, wparam, lparam):
+        if ncode == 0:
+            kb = ctypes.cast(ctypes.c_void_p(lparam),
+                             ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
+            vk = kb.vkCode
+            wp = int(wparam)
+            if wp in (WM_KEYDOWN, WM_SYSKEYDOWN):
+                for name, mask, tvk in self._combos:
+                    if vk == tvk and vk not in self._pressed and _mod_down(mask):
+                        self._pressed.add(vk)
+                        cb = self.callbacks.get(name)
+                        if cb:
+                            from .log import log
+                            log(f"hotkey '{name}' сработал (LL-hook)")
+                            threading.Thread(target=cb, daemon=True).start()
+            elif wp in (WM_KEYUP, WM_SYSKEYUP):
+                self._pressed.discard(vk)
+        return user32.CallNextHookEx(self._hook, ncode, wparam, lparam)
+
+    def _run(self):
+        from .log import log
+        self._thread_id = kernel32.GetCurrentThreadId()
+        self._proc = HOOKPROC(self._on_key)
+        hmod = kernel32.GetModuleHandleW(None)
+        self._hook = user32.SetWindowsHookExW(WH_KEYBOARD_LL, self._proc, hmod, 0)
+        if not self._hook:
+            err = ctypes.get_last_error()
+            self.failed = [n for n, _, _ in self._combos]
+            log(f"LL-hook НЕ установлен, err={err}")
+            return
+        log(f"LL-hook установлен, слушаю: {[c[0] for c in self._combos]}")
         msg = wintypes.MSG()
-        while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) != 0:
-            if msg.message == WM_HOTKEY:
-                name = ids.get(int(msg.wParam))
-                cb = self.callbacks.get(name) if name else None
-                if cb:
-                    threading.Thread(target=cb, daemon=True).start()
+        while True:
+            r = user32.GetMessageW(ctypes.byref(msg), None, 0, 0)
+            if r == 0 or r == -1:
+                break
+            user32.TranslateMessage(ctypes.byref(msg))
+            user32.DispatchMessageW(ctypes.byref(msg))
 
     def stop(self):
+        if self._hook:
+            try:
+                user32.UnhookWindowsHookEx(self._hook)
+            except Exception:
+                pass
         if self._thread_id:
-            # WM_QUIT = 0x0012
-            user32.PostThreadMessageW(self._thread_id, 0x0012, 0, 0)
+            user32.PostThreadMessageW(self._thread_id, 0x0012, 0, 0)  # WM_QUIT
