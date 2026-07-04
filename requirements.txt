@@ -1,0 +1,10 @@
+# «Вслух» — зависимости.
+# torch ставится отдельно в install.ps1 (CPU-версия по умолчанию, GPU — при
+# наличии видеокарты NVIDIA), т.к. у него особый индекс колёс. ruaccent тянет
+# torch и transformers сам, поэтому torch ставим ДО него.
+
+numpy
+num2words
+ruaccent
+pystray
+Pillow

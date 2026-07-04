@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вслух — настройки</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --fg: #1a1d21; --muted: #6b7280;
+    --border: #e3e6ea; --accent: #2f6df6; --accent-fg: #fff; --ok: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#15171c; --card:#1e2128; --fg:#e8eaed; --muted:#9aa0aa;
+            --border:#2c3038; --accent:#4b83ff; --accent-fg:#fff; --ok:#3ecf6a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 18px 60px; }
+  h1 { font-size: 22px; margin: 4px 0 2px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:16px; }
+  .row { margin-bottom: 18px; }
+  .row:last-child { margin-bottom: 0; }
+  label { display:block; font-weight:600; margin-bottom:8px; }
+  .hint { color:var(--muted); font-size:13px; font-weight:400; margin-top:6px; }
+  select, input[type=text], textarea {
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
+    background:var(--bg); color:var(--fg); font:inherit;
+  }
+  textarea { min-height:130px; resize:vertical; font-family:ui-monospace,Consolas,monospace; font-size:13px; }
+  .flex { display:flex; gap:10px; align-items:center; }
+  .flex select { flex:1; }
+  button {
+    border:0; border-radius:10px; padding:10px 16px; font:inherit; font-weight:600;
+    background:var(--accent); color:var(--accent-fg); cursor:pointer; white-space:nowrap;
+  }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  button:active { transform: translateY(1px); }
+  input[type=range] { width:100%; accent-color:var(--accent); }
+  .rate-val { font-variant-numeric: tabular-nums; font-weight:700; }
+  .switch { display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .switch input { width:44px; height:24px; appearance:none; background:var(--border);
+    border-radius:20px; position:relative; cursor:pointer; transition:.2s; flex:none; }
+  .switch input:checked { background:var(--ok); }
+  .switch input::after { content:""; position:absolute; width:18px; height:18px; border-radius:50%;
+    background:#fff; top:3px; left:3px; transition:.2s; }
+  .switch input:checked::after { left:23px; }
+  .saved { color:var(--ok); font-size:13px; margin-left:10px; opacity:0; transition:.3s; }
+  .saved.show { opacity:1; }
+  .dev { color:var(--muted); font-size:12px; margin-top:14px; }
+  code { background:var(--bg); padding:2px 6px; border-radius:6px; border:1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔊 Вслух</h1>
+  <p class="sub">Выделите текст в любом окне и нажмите горячую клавишу — я прочитаю его вслух. Всё локально, без интернета.</p>
+
+  <div class="card">
+    <div class="row">
+      <label class="switch">
+        <input type="checkbox" id="enabled">
+        <span>Озвучка включена</span>
+      </label>
+    </div>
+
+    <div class="row">
+      <label>Голос</label>
+      <div class="flex">
+        <select id="voice"></select>
+        <button class="ghost" id="preview">▶ Прослушать</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Скорость речи: <span class="rate-val" id="rateVal">×1.15</span></label>
+      <input type="range" id="rate" min="0.7" max="1.5" step="0.05" value="1.15">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label>Словарь произношений <span class="saved" id="dictSaved">сохранено ✓</span></label>
+      <textarea id="dict" spellcheck="false"></textarea>
+      <div class="hint">Одна замена в строке, формат <code>написано=читать</code>. Например: <code>Ozon=озон</code>. Нужно для брендов, латиницы, артикулов.</div>
+    </div>
+    <button id="saveDict">Сохранить словарь</button>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label>Горячие клавиши</label>
+      <div class="flex" style="margin-bottom:8px">
+        <span style="flex:none;width:130px">Озвучить:</span>
+        <input type="text" id="hkSpeak" placeholder="ctrl+alt+z">
+      </div>
+      <div class="flex">
+        <span style="flex:none;width:130px">Остановить:</span>
+        <input type="text" id="hkStop" placeholder="ctrl+alt+x">
+      </div>
+      <div class="hint">Формат <code>ctrl+alt+z</code>. Новая клавиша заработает после перезапуска программы (из меню в трее → Выход → снова запустить).</div>
+    </div>
+    <button id="saveHk">Сохранить клавиши</button>
+  </div>
+
+  <div class="dev" id="dev"></div>
+</div>
+
+<script>
+const T = "__TOKEN__";
+const $ = s => document.querySelector(s);
+async function getCfg(){ return (await fetch("/config")).json(); }
+async function post(path, body){
+  return fetch(path+"?t="+encodeURIComponent(T), {
+    method:"POST", headers:{"Content-Type":"application/json","X-Token":T},
+    body: JSON.stringify(body||{})
+  });
+}
+function dictToText(d){ return Object.entries(d||{}).map(([k,v])=>k+"="+v).join("\n"); }
+function textToDict(t){
+  const d={};
+  t.split("\n").forEach(line=>{
+    const i=line.indexOf("=");
+    if(i>0){ const k=line.slice(0,i).trim(), v=line.slice(i+1).trim(); if(k) d[k]=v; }
+  });
+  return d;
+}
+function flash(el){ el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),1500); }
+
+async function init(){
+  const c = await getCfg();
+  const vsel = $("#voice");
+  vsel.innerHTML = c.voices.map(v=>`<option value="${v.id}">${v.label}</option>`).join("");
+  vsel.value = c.voice;
+  $("#rate").value = c.rate;
+  $("#rateVal").textContent = "×"+Number(c.rate).toFixed(2);
+  $("#enabled").checked = !!c.enabled;
+  $("#dict").value = dictToText(c.dictionary);
+  $("#hkSpeak").value = c.hotkey_speak;
+  $("#hkStop").value = c.hotkey_stop;
+  $("#dev").textContent = "Устройство: " + (c.device_actual==="cuda"?"видеокарта (быстро)":c.device_actual==="cpu"?"процессор":"загрузка…");
+}
+
+$("#voice").addEventListener("change", e => post("/config", {voice:e.target.value}));
+$("#enabled").addEventListener("change", e => post("/config", {enabled:e.target.checked}));
+$("#rate").addEventListener("input", e => $("#rateVal").textContent = "×"+Number(e.target.value).toFixed(2));
+$("#rate").addEventListener("change", e => post("/config", {rate:Number(e.target.value)}));
+$("#preview").addEventListener("click", () =>
+  post("/preview", {voice:$("#voice").value, rate:Number($("#rate").value)}));
+$("#saveDict").addEventListener("click", async () => {
+  await post("/config", {dictionary: textToDict($("#dict").value)});
+  flash($("#dictSaved"));
+});
+$("#saveHk").addEventListener("click", () =>
+  post("/config", {hotkey_speak:$("#hkSpeak").value.trim().toLowerCase(),
+                   hotkey_stop:$("#hkStop").value.trim().toLowerCase()}));
+
+// перечитать при возврате фокуса — вкладка не показывает устаревшее из трея
+window.addEventListener("focus", init);
+init();
+</script>
+</body>
+</html>
