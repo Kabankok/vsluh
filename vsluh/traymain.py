@@ -10,9 +10,9 @@ import webbrowser
 from pathlib import Path
 
 import pystray
-from PIL import Image, ImageDraw
 from pystray import Menu, MenuItem
 
+from .icon import make_icon
 from .tts import VOICES, VOICE_LABELS
 
 BASE = Path(__file__).resolve().parent.parent
@@ -79,15 +79,8 @@ class Client:
 
 
 def _make_icon(on=True, loading=False):
-    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    col = (160, 160, 160, 255) if loading else ((47, 109, 246, 255) if on else (120, 120, 120, 255))
-    d.ellipse([2, 2, 62, 62], fill=col)
-    d.polygon([(20, 27), (29, 27), (39, 18), (39, 46), (29, 37), (20, 37)], fill="white")
-    if on and not loading:
-        d.arc([36, 18, 52, 46], -55, 55, fill="white", width=3)
-        d.arc([40, 12, 60, 52], -50, 50, fill="white", width=3)
-    return img
+    state = "loading" if loading else ("on" if on else "off")
+    return make_icon(64, state)
 
 
 def main():
