@@ -170,6 +170,12 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b93a5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
     background-repeat:no-repeat; background-position:right 13px center; background-size:16px;}
   .field select{flex:1;}
+  /* пункты нативного выпадающего списка — читаемые в обеих темах
+     (по умолчанию браузер рисует их светлым по белому в тёмной теме) */
+  select option{background:#ffffff; color:#1a1f2b;}
+  @media (prefers-color-scheme:dark){ select option{background:#181c26; color:#eceef5;} }
+  :root[data-theme="dark"] select option{background:#181c26; color:#eceef5;}
+  :root[data-theme="light"] select option{background:#ffffff; color:#1a1f2b;}
   textarea{min-height:140px; resize:vertical; line-height:1.6;
     font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:13.5px;}
 
