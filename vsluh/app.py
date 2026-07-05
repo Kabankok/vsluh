@@ -41,11 +41,24 @@ def main():
         else:
             log("on_speak: пустой захват — нечего озвучивать")
 
-    listener = HotkeyListener(
-        {"speak": core.cfg["hotkey_speak"], "stop": core.cfg["hotkey_stop"]},
-        {"speak": on_speak, "stop": core.stop},
-    )
-    listener.start()
+    def make_listener(speak, stop):
+        return HotkeyListener({"speak": speak, "stop": stop},
+                              {"speak": on_speak, "stop": core.stop})
+
+    listener = [make_listener(core.cfg["hotkey_speak"], core.cfg["hotkey_stop"])]
+    listener[0].start()
+
+    def restart_hotkeys(speak, stop):
+        from .log import log
+        try:
+            listener[0].stop()
+        except Exception:
+            pass
+        listener[0] = make_listener(speak, stop)
+        listener[0].start()
+        log(f"хоткеи перерегистрированы вживую: speak={speak}, stop={stop}")
+
+    core.on_hotkeys_changed = restart_hotkeys
 
     threading.Thread(target=core.load, daemon=True).start()
 

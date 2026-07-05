@@ -34,7 +34,8 @@ class Core:
         self._gen_lock = threading.Lock()
         self._play_lock = threading.Lock()
         self.tmp = Path(tempfile.gettempdir())
-        self.on_state_change = None  # трей перерисовать меню/иконку
+        self.on_state_change = None      # трей перерисовать меню/иконку
+        self.on_hotkeys_changed = None   # движку — перерегистрировать хоткеи вживую
 
     # --- жизненный цикл ---
     def load(self):
@@ -49,12 +50,17 @@ class Core:
         return c
 
     def update_config(self, patch):
+        old_speak = self.cfg.get("hotkey_speak")
+        old_stop = self.cfg.get("hotkey_stop")
         for k, v in patch.items():
             if k == "dictionary" and isinstance(v, dict):
                 self.cfg["dictionary"] = v
             elif k in config.DEFAULTS:
                 self.cfg[k] = v
         config.save(self.base_dir, self.cfg)
+        if self.on_hotkeys_changed and (self.cfg.get("hotkey_speak") != old_speak
+                                        or self.cfg.get("hotkey_stop") != old_stop):
+            self.on_hotkeys_changed(self.cfg["hotkey_speak"], self.cfg["hotkey_stop"])
         if self.on_state_change:
             self.on_state_change()
 
