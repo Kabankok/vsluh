@@ -12,6 +12,9 @@ from .tts import VOICES, VOICE_LABELS
 PORT = 5577  # свой порт, чтобы не конфликтовать с другими локальными TTS-инструментами
 UI_DIR = Path(__file__).parent / "ui"
 
+# ссылка на Telegram-канал в футере настроек (лид-магнит); подставляется в HTML
+TELEGRAM_URL = "https://t.me/vibe_coding_ozon_wb"
+
 
 def make_handler(core, token, stop_event=None):
     class Handler(BaseHTTPRequestHandler):
@@ -48,6 +51,7 @@ def make_handler(core, token, stop_event=None):
             if path == "/settings":
                 html = (UI_DIR / "settings.html").read_text(encoding="utf-8")
                 html = html.replace("__TOKEN__", token)
+                html = html.replace("__TELEGRAM_URL__", TELEGRAM_URL)
                 self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
             elif path == "/config":
                 cfg = core.get_config()

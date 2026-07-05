@@ -5,110 +5,374 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Вслух — настройки</title>
 <style>
-  :root {
-    --bg: #f5f6f8; --card: #ffffff; --fg: #1a1d21; --muted: #6b7280;
-    --border: #e3e6ea; --accent: #2f6df6; --accent-fg: #fff; --ok: #16a34a;
+  :root{
+    --accent-a:#4C82FB; --accent-b:#7B5CF5;
+    --brand:linear-gradient(135deg,#4C82FB 0%,#7B5CF5 100%);
+    --ease:cubic-bezier(.22,.7,.24,1);
+
+    /* светлая тема */
+    --page:#eef1fb;
+    --text:#1a1f2b;
+    --muted:#5b6474;
+    --card-bg:rgba(255,255,255,.60);
+    --card-brd:rgba(255,255,255,.75);
+    --card-sh:0 18px 50px -22px rgba(72,66,140,.45), 0 2px 8px rgba(20,24,42,.05);
+    --field-bg:rgba(255,255,255,.55);
+    --field-brd:rgba(28,33,54,.12);
+    --field-focus:rgba(76,130,251,.45);
+    --track:rgba(28,33,54,.12);
+    --chip-bg:rgba(255,255,255,.5);
+    --sep:rgba(28,33,54,.08);
+    --ok:#16a34a;
+    --chev:%235b6474;
   }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#15171c; --card:#1e2128; --fg:#e8eaed; --muted:#9aa0aa;
-            --border:#2c3038; --accent:#4b83ff; --accent-fg:#fff; --ok:#3ecf6a; }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --page:#0b0d15;
+      --text:#eceef5;
+      --muted:#9aa3b8;
+      --card-bg:rgba(24,27,38,.58);
+      --card-brd:rgba(255,255,255,.10);
+      --card-sh:0 24px 60px -28px rgba(0,0,0,.75), 0 2px 10px rgba(0,0,0,.35);
+      --field-bg:rgba(255,255,255,.05);
+      --field-brd:rgba(255,255,255,.12);
+      --field-focus:rgba(123,92,245,.6);
+      --track:rgba(255,255,255,.13);
+      --chip-bg:rgba(255,255,255,.06);
+      --sep:rgba(255,255,255,.09);
+      --ok:#43d17a;
+      --chev:%239aa3b8;
+    }
   }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif; }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 18px 60px; }
-  h1 { font-size: 22px; margin: 4px 0 2px; }
-  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:16px; }
-  .row { margin-bottom: 18px; }
-  .row:last-child { margin-bottom: 0; }
-  label { display:block; font-weight:600; margin-bottom:8px; }
-  .hint { color:var(--muted); font-size:13px; font-weight:400; margin-top:6px; }
-  select, input[type=text], textarea {
-    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
-    background:var(--bg); color:var(--fg); font:inherit;
+  /* явный тумблер темы (если система стамповала data-theme) */
+  :root[data-theme="dark"]{
+    --page:#0b0d15; --text:#eceef5; --muted:#9aa3b8;
+    --card-bg:rgba(24,27,38,.58); --card-brd:rgba(255,255,255,.10);
+    --card-sh:0 24px 60px -28px rgba(0,0,0,.75), 0 2px 10px rgba(0,0,0,.35);
+    --field-bg:rgba(255,255,255,.05); --field-brd:rgba(255,255,255,.12);
+    --field-focus:rgba(123,92,245,.6); --track:rgba(255,255,255,.13);
+    --chip-bg:rgba(255,255,255,.06); --sep:rgba(255,255,255,.09);
+    --ok:#43d17a; --chev:%239aa3b8;
   }
-  textarea { min-height:130px; resize:vertical; font-family:ui-monospace,Consolas,monospace; font-size:13px; }
-  .flex { display:flex; gap:10px; align-items:center; }
-  .flex select { flex:1; }
-  button {
-    border:0; border-radius:10px; padding:10px 16px; font:inherit; font-weight:600;
-    background:var(--accent); color:var(--accent-fg); cursor:pointer; white-space:nowrap;
+  :root[data-theme="light"]{
+    --page:#eef1fb; --text:#1a1f2b; --muted:#5b6474;
+    --card-bg:rgba(255,255,255,.60); --card-brd:rgba(255,255,255,.75);
+    --card-sh:0 18px 50px -22px rgba(72,66,140,.45), 0 2px 8px rgba(20,24,42,.05);
+    --field-bg:rgba(255,255,255,.55); --field-brd:rgba(28,33,54,.12);
+    --field-focus:rgba(76,130,251,.45); --track:rgba(28,33,54,.12);
+    --chip-bg:rgba(255,255,255,.5); --sep:rgba(28,33,54,.08);
+    --ok:#16a34a; --chev:%235b6474;
   }
-  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
-  button:active { transform: translateY(1px); }
-  input[type=range] { width:100%; accent-color:var(--accent); }
-  .rate-val { font-variant-numeric: tabular-nums; font-weight:700; }
-  .switch { display:flex; align-items:center; gap:12px; cursor:pointer; }
-  .switch input { width:44px; height:24px; appearance:none; background:var(--border);
-    border-radius:20px; position:relative; cursor:pointer; transition:.2s; flex:none; }
-  .switch input:checked { background:var(--ok); }
-  .switch input::after { content:""; position:absolute; width:18px; height:18px; border-radius:50%;
-    background:#fff; top:3px; left:3px; transition:.2s; }
-  .switch input:checked::after { left:23px; }
-  .saved { color:var(--ok); font-size:13px; margin-left:10px; opacity:0; transition:.3s; }
-  .saved.show { opacity:1; }
-  .dev { color:var(--muted); font-size:12px; margin-top:14px; }
-  code { background:var(--bg); padding:2px 6px; border-radius:6px; border:1px solid var(--border); }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--page); color:var(--text);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+
+  /* --- живой градиентный фон (аврора) --- */
+  .aurora{position:fixed; inset:-20% -10% -10% -10%; z-index:-1; overflow:hidden;}
+  .aurora span{position:absolute; border-radius:50%; filter:blur(70px); opacity:.55;
+    mix-blend-mode:normal; will-change:transform;}
+  .aurora .b1{width:46vw;height:46vw;left:-6vw;top:-8vw;background:#4C82FB;
+    animation:drift1 22s var(--ease) infinite alternate;}
+  .aurora .b2{width:42vw;height:42vw;right:-8vw;top:2vw;background:#7B5CF5;
+    animation:drift2 26s var(--ease) infinite alternate;}
+  .aurora .b3{width:40vw;height:40vw;left:16vw;bottom:-14vw;background:#A855F7;
+    opacity:.42; animation:drift3 30s var(--ease) infinite alternate;}
+  .aurora .b4{width:34vw;height:34vw;right:6vw;bottom:-10vw;background:#38BDF8;
+    opacity:.4; animation:drift1 28s var(--ease) infinite alternate-reverse;}
+  @media (prefers-color-scheme:dark){ .aurora span{opacity:.42;} .aurora .b3{opacity:.34;} }
+  @keyframes drift1{from{transform:translate3d(0,0,0) scale(1);}
+    to{transform:translate3d(6vw,4vw,0) scale(1.18);}}
+  @keyframes drift2{from{transform:translate3d(0,0,0) scale(1.05);}
+    to{transform:translate3d(-5vw,6vw,0) scale(.9);}}
+  @keyframes drift3{from{transform:translate3d(0,0,0) scale(1);}
+    to{transform:translate3d(8vw,-5vw,0) scale(1.2);}}
+
+  .wrap{max-width:660px; margin:0 auto; padding:40px 20px 34px;}
+
+  /* --- шапка --- */
+  .hero{display:flex; align-items:center; gap:16px; margin-bottom:24px;
+    animation:rise .55s var(--ease) both;}
+  .badge{width:56px; height:56px; flex:none; border-radius:17px; background:var(--brand);
+    display:grid; place-items:center; color:#fff;
+    box-shadow:0 12px 28px -8px rgba(96,86,220,.7), inset 0 1px 0 rgba(255,255,255,.35);
+    animation:float 5s ease-in-out infinite;}
+  .badge svg{width:30px;height:30px;display:block;}
+  .hero h1{font-size:26px; font-weight:750; letter-spacing:-.02em; margin:0; line-height:1.1;}
+  .hero .sub{color:var(--muted); font-size:14px; margin:4px 0 0; max-width:44ch;}
+  @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+
+  /* --- карточки --- */
+  .card{
+    position:relative; background:var(--card-bg); border:1px solid var(--card-brd);
+    border-radius:22px; padding:22px 22px; margin-bottom:18px;
+    box-shadow:var(--card-sh);
+    -webkit-backdrop-filter:blur(22px) saturate(1.4);
+    backdrop-filter:blur(22px) saturate(1.4);
+    animation:rise .6s var(--ease) both;
+  }
+  .card::before{content:""; position:absolute; inset:0; border-radius:22px; pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 42%);
+    opacity:.7; mix-blend-mode:overlay;}
+  @media (prefers-color-scheme:dark){ .card::before{opacity:.35;} }
+  .card:nth-of-type(1){animation-delay:.06s;}
+  .card:nth-of-type(2){animation-delay:.13s;}
+  .card:nth-of-type(3){animation-delay:.2s;}
+
+  .card-head{display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin-bottom:16px;}
+  .card-title{font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted);}
+
+  .row{padding:14px 0; border-top:1px solid var(--sep);}
+  .row:first-of-type{border-top:0; padding-top:0;}
+  .row:last-child{padding-bottom:0;}
+  .lbl{display:block; font-weight:650; margin:0 0 10px;}
+  .hint{color:var(--muted); font-size:13px; line-height:1.5; margin-top:10px;}
+  code{background:var(--chip-bg); padding:2px 7px; border-radius:7px;
+    border:1px solid var(--field-brd); font-size:12.5px;
+    font-family:ui-monospace,"SF Mono",Consolas,monospace;}
+
+  /* --- тумблер --- */
+  .switch{display:flex; align-items:center; gap:14px; cursor:pointer; user-select:none;}
+  .switch .txt{font-weight:650;}
+  .switch .txt small{display:block; font-weight:400; color:var(--muted); font-size:12.5px; margin-top:2px;}
+  .switch input{appearance:none; -webkit-appearance:none; margin:0; flex:none;
+    width:52px; height:30px; border-radius:99px; cursor:pointer; position:relative;
+    background:var(--track); transition:background .35s var(--ease);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.14);}
+  .switch input::after{content:""; position:absolute; top:3px; left:3px;
+    width:24px; height:24px; border-radius:50%; background:#fff;
+    box-shadow:0 2px 6px rgba(20,24,42,.35);
+    transition:transform .35s var(--ease), width .2s var(--ease);}
+  .switch input:checked{background:var(--brand);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.2), 0 4px 14px -4px rgba(96,86,220,.7);}
+  .switch input:checked::after{transform:translateX(22px);}
+  .switch input:active::after{width:28px;}
+  .switch input:focus-visible{outline:2px solid var(--field-focus); outline-offset:3px;}
+
+  /* --- поля --- */
+  .field{display:flex; gap:10px; align-items:center;}
+  select,input[type=text],textarea{
+    width:100%; padding:12px 14px; border-radius:13px; color:var(--text);
+    background:var(--field-bg); border:1px solid var(--field-brd); font:inherit;
+    transition:border-color .2s, box-shadow .2s, background .2s;
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  }
+  select:focus,input[type=text]:focus,textarea:focus{outline:none;
+    border-color:var(--field-focus); box-shadow:0 0 0 4px color-mix(in srgb,var(--field-focus) 30%,transparent);}
+  select{appearance:none; -webkit-appearance:none; cursor:pointer; padding-right:40px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b93a5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 13px center; background-size:16px;}
+  .field select{flex:1;}
+  textarea{min-height:140px; resize:vertical; line-height:1.6;
+    font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:13.5px;}
+
+  /* --- кнопки --- */
+  button{border:0; cursor:pointer; font:inherit; font-weight:650; border-radius:13px;
+    padding:12px 18px; color:#fff; background:var(--brand); white-space:nowrap;
+    transition:transform .12s var(--ease), box-shadow .25s, filter .2s;
+    box-shadow:0 10px 22px -10px rgba(96,86,220,.75);}
+  button:hover{transform:translateY(-1px); filter:brightness(1.05);
+    box-shadow:0 14px 28px -10px rgba(96,86,220,.85);}
+  button:active{transform:translateY(1px) scale(.99);}
+  button:focus-visible{outline:2px solid var(--field-focus); outline-offset:3px;}
+  button.ghost{background:var(--field-bg); color:var(--text); border:1px solid var(--field-brd);
+    box-shadow:none; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);}
+  button.ghost:hover{filter:none; border-color:var(--field-focus);
+    box-shadow:0 0 0 4px color-mix(in srgb,var(--field-focus) 20%,transparent);}
+
+  /* превью-кнопка с эквалайзером */
+  .preview{display:inline-flex; align-items:center; gap:9px; flex:none;}
+  .eq{display:inline-flex; align-items:center; gap:3px; height:16px;}
+  .eq i{width:3px; height:6px; border-radius:2px; background:currentColor; opacity:.85;}
+  .preview.playing .eq i{animation:eq .7s var(--ease) infinite;}
+  .preview.playing .eq i:nth-child(2){animation-delay:.12s;}
+  .preview.playing .eq i:nth-child(3){animation-delay:.24s;}
+  .preview.playing .eq i:nth-child(4){animation-delay:.36s;}
+  @keyframes eq{0%,100%{height:6px;}50%{height:16px;}}
+
+  /* --- слайдер скорости --- */
+  .rate-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .rate-val{font-variant-numeric:tabular-nums; font-weight:750; font-size:18px;
+    padding:3px 12px; border-radius:11px; color:#fff; background:var(--brand);
+    box-shadow:0 6px 16px -6px rgba(96,86,220,.7); transition:transform .18s var(--ease);}
+  .rate-val.pop{transform:scale(1.12);}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:14px;
+    margin:8px 0; border-radius:99px; outline:none; cursor:pointer;
+    background:linear-gradient(90deg,var(--accent-a),var(--accent-b)) left/var(--pct,56%) 100% no-repeat, var(--track);}
+  input[type=range]::-webkit-slider-runnable-track{-webkit-appearance:none; height:14px; border-radius:99px; background:transparent;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:26px; height:26px; margin-top:-6px;
+    border-radius:50%; background:#fff; border:2px solid rgba(255,255,255,.9);
+    box-shadow:0 3px 10px rgba(76,130,251,.55), 0 0 0 5px color-mix(in srgb,var(--accent-b) 16%,transparent);
+    transition:transform .12s var(--ease);}
+  input[type=range]:active::-webkit-slider-thumb{transform:scale(1.14);}
+  input[type=range]::-moz-range-track{height:14px; border-radius:99px; background:var(--track);}
+  input[type=range]::-moz-range-progress{height:14px; border-radius:99px;
+    background:linear-gradient(90deg,var(--accent-a),var(--accent-b));}
+  input[type=range]::-moz-range-thumb{width:24px; height:24px; border:2px solid #fff; border-radius:50%;
+    background:#fff; box-shadow:0 3px 10px rgba(76,130,251,.55);}
+  input[type=range]:focus-visible{box-shadow:0 0 0 4px color-mix(in srgb,var(--field-focus) 30%,transparent);}
+  .rate-ends{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:2px;}
+
+  /* --- поля захвата клавиш --- */
+  .hk-row{display:flex; align-items:center; gap:12px; margin-bottom:11px;}
+  .hk-row .cap{flex:none; width:120px; color:var(--muted); font-weight:600; font-size:13.5px;}
+  .keycap{flex:1; cursor:pointer; caret-color:transparent; user-select:none;
+    font-family:ui-monospace,"SF Mono",Consolas,monospace; font-weight:600; letter-spacing:.02em;}
+  .keycap.capturing{border-color:var(--field-focus);
+    box-shadow:0 0 0 4px color-mix(in srgb,var(--field-focus) 30%,transparent);
+    animation:cappulse 1.3s ease-in-out infinite; color:var(--muted); font-style:italic; letter-spacing:normal;}
+  @keyframes cappulse{0%,100%{box-shadow:0 0 0 4px color-mix(in srgb,var(--field-focus) 18%,transparent);}
+    50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--field-focus) 26%,transparent);}}
+
+  .actions{margin-top:16px;}
+
+  /* --- индикатор устройства --- */
+  .devpill{display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:99px;
+    background:var(--chip-bg); border:1px solid var(--field-brd); font-size:12.5px; font-weight:600;
+    color:var(--muted); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);}
+  .devpill .dot{width:8px; height:8px; border-radius:50%; background:var(--muted); flex:none;}
+  .devpill[data-s="cuda"] .dot{background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.22);}
+  .devpill[data-s="cpu"] .dot{background:#4C82FB; box-shadow:0 0 0 3px rgba(76,130,251,.22);}
+  .devpill[data-s="loading"] .dot{background:#f59e0b; animation:blink 1s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+  /* --- футер --- */
+  .foot{margin-top:26px; text-align:center; color:var(--muted); font-size:13px;
+    animation:rise .6s var(--ease) both; animation-delay:.28s;}
+  .foot a{color:var(--muted); text-decoration:none; font-weight:600;
+    background:linear-gradient(var(--accent-a),var(--accent-b)); background-size:100% 1px;
+    background-repeat:no-repeat; background-position:0 100%; padding-bottom:2px;
+    transition:color .2s;}
+  .foot a:hover{color:transparent; -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; background-image:var(--brand); background-size:auto;}
+  .foot .dotsep{margin:0 10px; opacity:.5;}
+
+  /* --- тост «Сохранено» --- */
+  #toast{position:fixed; left:50%; bottom:26px; transform:translate(-50%,24px);
+    display:flex; align-items:center; gap:10px; padding:12px 18px; border-radius:16px;
+    background:var(--card-bg); border:1px solid var(--card-brd); color:var(--text);
+    box-shadow:var(--card-sh); font-weight:650; font-size:14px;
+    -webkit-backdrop-filter:blur(20px) saturate(1.4); backdrop-filter:blur(20px) saturate(1.4);
+    opacity:0; pointer-events:none; z-index:50;
+    transition:opacity .28s var(--ease), transform .32s var(--ease);}
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+  #toast .tick{width:22px; height:22px; flex:none; border-radius:50%; background:var(--ok);
+    display:grid; place-items:center; color:#fff;}
+  #toast .tick svg{width:13px; height:13px;}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms !important; animation-iteration-count:1 !important;
+      transition-duration:.05ms !important;}
+    .badge,.aurora span{animation:none !important;}
+  }
+  @media (max-width:520px){
+    .wrap{padding:26px 14px 28px;}
+    .hero h1{font-size:22px;}
+    .hk-row{flex-wrap:wrap;}
+    .hk-row .cap{width:auto;}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>🔊 Вслух</h1>
-  <p class="sub">Выделите текст в любом окне и нажмите горячую клавишу — я прочитаю его вслух. Всё локально, без интернета.</p>
+<div class="aurora" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span><span class="b4"></span></div>
 
-  <div class="card">
+<div class="wrap">
+  <header class="hero">
+    <div class="badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"/>
+        <path d="M16.5 8.5a5 5 0 0 1 0 7"/>
+        <path d="M19 6a8.5 8.5 0 0 1 0 12"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Вслух</h1>
+      <p class="sub">Выделите текст в любом окне и нажмите горячую клавишу — я прочитаю его вслух. Всё локально, без интернета.</p>
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="card-head">
+      <span class="card-title">Звук</span>
+      <span class="devpill" id="dev" data-s="loading"><span class="dot"></span><span class="devtxt">загрузка…</span></span>
+    </div>
+
     <div class="row">
       <label class="switch">
         <input type="checkbox" id="enabled">
-        <span>Озвучка включена</span>
+        <span class="txt">Озвучка включена<small>Общий выключатель — читать выделенное или нет</small></span>
       </label>
     </div>
 
     <div class="row">
-      <label>Голос</label>
-      <div class="flex">
+      <label class="lbl" for="voice">Голос</label>
+      <div class="field">
         <select id="voice"></select>
-        <button class="ghost" id="preview">▶ Прослушать</button>
+        <button type="button" class="ghost preview" id="preview">
+          <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span class="plbl">Прослушать</span>
+        </button>
       </div>
     </div>
 
     <div class="row">
-      <label>Скорость речи: <span class="rate-val" id="rateVal">×1.15</span></label>
+      <div class="rate-head">
+        <label class="lbl" for="rate" style="margin:0">Скорость речи</label>
+        <span class="rate-val" id="rateVal">×1.15</span>
+      </div>
       <input type="range" id="rate" min="0.7" max="1.5" step="0.05" value="1.15">
+      <div class="rate-ends"><span>медленнее</span><span>быстрее</span></div>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
+  <section class="card">
+    <div class="card-head"><span class="card-title">Словарь произношений</span></div>
     <div class="row">
-      <label>Словарь произношений <span class="saved" id="dictSaved">сохранено ✓</span></label>
-      <textarea id="dict" spellcheck="false"></textarea>
-      <div class="hint">Одна замена в строке, формат <code>написано=читать</code>. Например: <code>Ozon=озон</code>. Нужно для брендов, латиницы, артикулов.</div>
+      <textarea id="dict" spellcheck="false" placeholder="Ozon=озон&#10;WB=вэ бэ&#10;FBO=эф бэ о"></textarea>
+      <div class="hint">Одна замена в строке, формат <code>написано=читать</code>. Нужно для брендов, латиницы и артикулов, чтобы читались правильно.</div>
     </div>
-    <button id="saveDict">Сохранить словарь</button>
-  </div>
+    <div class="actions"><button type="button" id="saveDict">Сохранить словарь</button></div>
+  </section>
 
-  <div class="card">
+  <section class="card">
+    <div class="card-head"><span class="card-title">Горячие клавиши</span></div>
     <div class="row">
-      <label>Горячие клавиши</label>
-      <div class="flex" style="margin-bottom:8px">
-        <span style="flex:none;width:130px">Озвучить:</span>
-        <input type="text" id="hkSpeak" placeholder="ctrl+alt+z">
+      <div class="hk-row">
+        <span class="cap">Озвучить</span>
+        <input type="text" id="hkSpeak" class="keycap" readonly placeholder="нажмите, чтобы задать">
       </div>
-      <div class="flex">
-        <span style="flex:none;width:130px">Остановить:</span>
-        <input type="text" id="hkStop" placeholder="ctrl+alt+x">
+      <div class="hk-row">
+        <span class="cap">Остановить</span>
+        <input type="text" id="hkStop" class="keycap" readonly placeholder="нажмите, чтобы задать">
       </div>
-      <div class="hint">Формат <code>ctrl+alt+z</code>. Новая клавиша заработает после перезапуска программы (из меню в трее → Выход → снова запустить).</div>
+      <div class="hint">Кликните поле и нажмите сочетание, например <code>ctrl+alt+z</code>. Новая клавиша начинает работать сразу после «Сохранить».</div>
     </div>
-    <button id="saveHk">Сохранить клавиши</button>
-  </div>
+    <div class="actions"><button type="button" id="saveHk">Сохранить клавиши</button></div>
+  </section>
 
-  <div class="dev" id="dev"></div>
+  <div class="foot">
+    <a href="https://vladimir-kabanov.ru" target="_blank" rel="noopener">Курс селлеров</a>
+    <span class="dotsep">•</span>
+    <a href="__TELEGRAM_URL__" target="_blank" rel="noopener" id="tglink">Telegram</a>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite">
+  <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
+  <span class="tmsg">Сохранено</span>
 </div>
 
 <script>
 const T = "__TOKEN__";
 const $ = s => document.querySelector(s);
+
 async function getCfg(){ return (await fetch("/config")).json(); }
 async function post(path, body){
   return fetch(path+"?t="+encodeURIComponent(T), {
@@ -116,6 +380,7 @@ async function post(path, body){
     body: JSON.stringify(body||{})
   });
 }
+
 function dictToText(d){ return Object.entries(d||{}).map(([k,v])=>k+"="+v).join("\n"); }
 function textToDict(t){
   const d={};
@@ -125,35 +390,138 @@ function textToDict(t){
   });
   return d;
 }
-function flash(el){ el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),1500); }
 
-async function init(){
-  const c = await getCfg();
-  const vsel = $("#voice");
-  vsel.innerHTML = c.voices.map(v=>`<option value="${v.id}">${v.label}</option>`).join("");
-  vsel.value = c.voice;
-  $("#rate").value = c.rate;
-  $("#rateVal").textContent = "×"+Number(c.rate).toFixed(2);
-  $("#enabled").checked = !!c.enabled;
-  $("#dict").value = dictToText(c.dictionary);
-  $("#hkSpeak").value = c.hotkey_speak;
-  $("#hkStop").value = c.hotkey_stop;
-  $("#dev").textContent = "Устройство: " + (c.device_actual==="cuda"?"видеокарта (быстро)":c.device_actual==="cpu"?"процессор":"загрузка…");
+// --- тост «Сохранено» ---
+let toastTimer=null;
+function toast(msg){
+  const el=$("#toast");
+  el.querySelector(".tmsg").textContent = msg || "Сохранено";
+  el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove("show"), 1700);
 }
 
-$("#voice").addEventListener("change", e => post("/config", {voice:e.target.value}));
-$("#enabled").addEventListener("change", e => post("/config", {enabled:e.target.checked}));
-$("#rate").addEventListener("input", e => $("#rateVal").textContent = "×"+Number(e.target.value).toFixed(2));
-$("#rate").addEventListener("change", e => post("/config", {rate:Number(e.target.value)}));
-$("#preview").addEventListener("click", () =>
-  post("/preview", {voice:$("#voice").value, rate:Number($("#rate").value)}));
-$("#saveDict").addEventListener("click", async () => {
-  await post("/config", {dictionary: textToDict($("#dict").value)});
-  flash($("#dictSaved"));
+// --- слайдер: заливка + живая подпись ---
+function paintRate(v){
+  const r=$("#rate"), min=+r.min, max=+r.max;
+  const pct=((v-min)/(max-min))*100;
+  r.style.setProperty("--pct", pct.toFixed(1)+"%");
+  const rv=$("#rateVal");
+  rv.textContent="×"+Number(v).toFixed(2);
+  rv.classList.remove("pop"); void rv.offsetWidth; rv.classList.add("pop");
+}
+
+// --- захват горячих клавиш ---
+const MODS=["Control","Alt","Shift","Meta"];
+function isMod(e){ return MODS.includes(e.key) || /^(Control|Alt|Shift|Meta|OS)(Left|Right)?$/.test(e.code); }
+function mainKey(e){
+  const c=e.code;
+  if(/^Key[A-Z]$/.test(c)) return c.slice(3).toLowerCase();
+  if(/^Digit[0-9]$/.test(c)) return c.slice(5);
+  if(/^F([1-9]|1[0-2])$/.test(c)) return c.toLowerCase();
+  if(c==="Space") return "space";
+  if(c==="Insert") return "insert";
+  return null;
+}
+let capturingEl=null;
+function beginCapture(el){
+  capturingEl=el;
+  el.dataset.prev=el.value;
+  el.classList.add("capturing");
+  el.value="Нажмите сочетание…";
+}
+function endCapture(restore){
+  if(!capturingEl) return;
+  const el=capturingEl;
+  el.classList.remove("capturing");
+  if(restore) el.value=el.dataset.prev||"";
+  capturingEl=null;
+}
+function onCaptureKey(e){
+  if(!capturingEl) return;
+  e.preventDefault();
+  if(e.key==="Escape"){ endCapture(true); capturingEl?capturingEl.blur():null; return; }
+  const parts=[];
+  if(e.ctrlKey) parts.push("ctrl");
+  if(e.altKey) parts.push("alt");
+  if(e.shiftKey) parts.push("shift");
+  if(e.metaKey) parts.push("win");
+  if(isMod(e)){
+    // ещё держим только модификаторы — показываем «живой» набор
+    capturingEl.value=(parts.join("+")+"+…")||"…";
+    return;
+  }
+  const mk=mainKey(e);
+  if(!mk){ return; } // неподдержанная клавиша — ждём другую
+  parts.push(mk);
+  const el=capturingEl;
+  el.value=parts.join("+").toLowerCase();
+  el.classList.remove("capturing");
+  capturingEl=null;
+  el.blur();
+}
+function wireCapture(el){
+  el.addEventListener("focus", ()=>beginCapture(el));
+  el.addEventListener("mousedown", e=>{ if(document.activeElement===el){ e.preventDefault(); beginCapture(el); } });
+  el.addEventListener("keydown", onCaptureKey);
+  el.addEventListener("blur", ()=>{ endCapture(true); });
+}
+
+// --- начальная загрузка конфига ---
+async function init(){
+  const c = await getCfg();
+  const vsel=$("#voice");
+  vsel.innerHTML=c.voices.map(v=>`<option value="${v.id}">${v.label}</option>`).join("");
+  vsel.value=c.voice;
+  $("#rate").value=c.rate;
+  paintRate(c.rate);
+  $("#enabled").checked=!!c.enabled;
+  $("#dict").value=dictToText(c.dictionary);
+  if(capturingEl!==$("#hkSpeak")) $("#hkSpeak").value=c.hotkey_speak||"";
+  if(capturingEl!==$("#hkStop"))  $("#hkStop").value =c.hotkey_stop ||"";
+  const dev=$("#dev"), st=c.device_actual;
+  dev.dataset.s=st;
+  dev.querySelector(".devtxt").textContent =
+    st==="cuda" ? "видеокарта — быстро" : st==="cpu" ? "процессор" : "загрузка…";
+  // футер: если плейсхолдер не подставлен сервером — мягкий фолбэк
+  const tg=$("#tglink");
+  if(tg && tg.getAttribute("href").indexOf("__")!==-1) tg.href="https://t.me/vibe_coding_ozon_wb";
+}
+
+// --- обработчики ---
+$("#enabled").addEventListener("change", async e=>{
+  await post("/config",{enabled:e.target.checked});
+  toast(e.target.checked ? "Озвучка включена" : "Озвучка выключена");
 });
-$("#saveHk").addEventListener("click", () =>
-  post("/config", {hotkey_speak:$("#hkSpeak").value.trim().toLowerCase(),
-                   hotkey_stop:$("#hkStop").value.trim().toLowerCase()}));
+$("#voice").addEventListener("change", async e=>{
+  await post("/config",{voice:e.target.value});
+  toast("Голос сохранён");
+});
+$("#rate").addEventListener("input", e=>paintRate(e.target.value));
+$("#rate").addEventListener("change", async e=>{
+  await post("/config",{rate:Number(e.target.value)});
+  toast("Скорость сохранена");
+});
+$("#preview").addEventListener("click", async ()=>{
+  const btn=$("#preview");
+  btn.classList.add("playing");
+  setTimeout(()=>btn.classList.remove("playing"), 2600);
+  await post("/preview",{voice:$("#voice").value, rate:Number($("#rate").value)});
+  toast("Проигрываю образец");
+});
+$("#saveDict").addEventListener("click", async ()=>{
+  await post("/config",{dictionary:textToDict($("#dict").value)});
+  toast("Словарь сохранён");
+});
+$("#saveHk").addEventListener("click", async ()=>{
+  const speak=$("#hkSpeak").value.trim().toLowerCase();
+  const stop =$("#hkStop").value.trim().toLowerCase();
+  await post("/config",{hotkey_speak:speak, hotkey_stop:stop});
+  toast("Клавиши сохранены");
+});
+
+wireCapture($("#hkSpeak"));
+wireCapture($("#hkStop"));
 
 // перечитать при возврате фокуса — вкладка не показывает устаревшее из трея
 window.addEventListener("focus", init);
