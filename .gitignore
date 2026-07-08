@@ -16,6 +16,10 @@ runtime.json
 *.wav
 vsluh_*.txt
 
+# ярлыки и тихий лаунчер — создаёт установщик под конкретную машину
+launch.vbs
+*.lnk
+
 # ОС/редактор
 Thumbs.db
 .DS_Store
