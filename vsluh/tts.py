@@ -80,6 +80,35 @@ SPEAKER_IDS = [sid for _, sid in VOICES]
 WARMUP_TEXT = ("Прогрев модели: замок открывается ключом, "
                "тридцать три коровы стоят на лугу возле старого дуба.")
 
+_ONNX_PATCHED = False
+
+
+def _patch_onnx_token_type_ids():
+    """Совместимость RUAccent с новыми transformers/onnxruntime: ONNX-модель
+    ударений требует вход token_type_ids, а токенайзер его больше не отдаёт →
+    put_accent падает, ударения не проставляются, и голос звучит с «акцентом».
+    Дописываем token_type_ids=нули (для одного предложения это верно) любой
+    сессии, которая их требует. Silero работает на torch, его это не касается."""
+    global _ONNX_PATCHED
+    if _ONNX_PATCHED:
+        return
+    import onnxruntime as ort
+    _orig_run = ort.InferenceSession.run
+
+    def run(self, output_names, input_feed, run_options=None):
+        try:
+            required = {i.name for i in self.get_inputs()}
+            if ("token_type_ids" in required and "token_type_ids" not in input_feed
+                    and "input_ids" in input_feed):
+                input_feed = dict(input_feed)
+                input_feed["token_type_ids"] = np.zeros_like(input_feed["input_ids"])
+        except Exception:
+            pass
+        return _orig_run(self, output_names, input_feed, run_options)
+
+    ort.InferenceSession.run = run
+    _ONNX_PATCHED = True
+
 
 class VslukhTTS:
     def __init__(self, model_path, device_pref="auto", ruaccent_size="turbo3.1"):
@@ -113,6 +142,7 @@ class VslukhTTS:
         self._model = model
         self._device = dev
 
+        _patch_onnx_token_type_ids()
         from ruaccent import RUAccent
         acc = RUAccent()
         acc.load(omograph_model_size=self.ruaccent_size,
