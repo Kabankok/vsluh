@@ -3,8 +3,16 @@
 # наличии видеокарты NVIDIA), т.к. у него особый индекс колёс. ruaccent тянет
 # torch и transformers сам, поэтому torch ставим ДО него.
 
-numpy
+numpy<3
 num2words
-ruaccent
+ruaccent==1.5.8.3
 pystray
 Pillow
+
+# Набор простановки ударений (RUAccent) самый хрупкий к обновлениям: свежие
+# transformers/onnxruntime меняли контракт ONNX-модели и ломали ударения
+# (голос звучал с «акцентом», см. фикс-шим в vsluh/tts.py). Фиксируем на
+# проверенный рабочий набор от 2026-07-08.
+transformers==5.13.0
+onnxruntime==1.27.0
+tokenizers==0.22.2
