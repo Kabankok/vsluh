@@ -14,7 +14,7 @@
 ![Лицензия](https://img.shields.io/badge/лицензия-MIT-blue)
 ![Голоса](https://img.shields.io/badge/голосов-6-orange)
 
-**[Установка](#install) · [Возможности](#features) · [Курс автора](#course) · [Telegram](https://t.me/vibe_coding_ozon_wb)**
+**[Установка](#install) · [Возможности](#features) · [Курс автора](#course) · [Telegram](https://telegram.me/vibe_coding_ozon_wb)**
 
 <br>
 
@@ -146,7 +146,7 @@ Claude Code сам склонирует репозиторий, проверит
 
 [![Пройти курс](https://img.shields.io/badge/Пройти_курс-vladimir--kabanov.ru-7C3AED?style=for-the-badge&labelColor=1F2937)](https://vladimir-kabanov.ru)
 &nbsp;
-[![Telegram-канал](https://img.shields.io/badge/Telegram-подписаться-229ED9?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/vibe_coding_ozon_wb)
+[![Telegram-канал](https://img.shields.io/badge/Telegram-подписаться-229ED9?style=for-the-badge&logo=telegram&logoColor=white)](https://telegram.me/vibe_coding_ozon_wb)
 
 </div>
 

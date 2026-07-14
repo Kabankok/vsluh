@@ -12,8 +12,11 @@ from .tts import VOICES, VOICE_LABELS
 PORT = 5577  # свой порт, чтобы не конфликтовать с другими локальными TTS-инструментами
 UI_DIR = Path(__file__).parent / "ui"
 
-# ссылка на Telegram-канал в футере настроек (лид-магнит); подставляется в HTML
-TELEGRAM_URL = "https://t.me/vibe_coding_ozon_wb"
+# ссылка на Telegram-канал в футере настроек (лид-магнит); подставляется в HTML.
+# Ведём через редирект на своём домене, а не прямо в Telegram: 13.07.2026 домен
+# t.me умер, и у всех, кто уже поставил Вслух, кнопка стала вести в никуда —
+# обновление им не разошлёшь. Через /tg такое чинится на нашей стороне.
+TELEGRAM_URL = "https://vladimir-kabanov.ru/tg"
 
 
 def make_handler(core, token, stop_event=None):
